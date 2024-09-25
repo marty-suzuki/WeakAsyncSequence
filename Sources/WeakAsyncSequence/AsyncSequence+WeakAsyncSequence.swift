@@ -1,9 +1,15 @@
 extension AsyncSequence {
     public func withWeak<T: AnyObject>(
         _ object: T?
-    ) -> WeakAsyncSequence<Self, T> {
-        WeakAsyncSequence(sequence: self) { [weak object] in
-            object
-        }
+    ) -> WeakAsyncSequence<Element, T> {
+        WeakAsyncSequence(
+            createAsyncIterator: {
+                var iterator = self.makeAsyncIterator()
+                return { try await iterator.next() }
+            },
+            getObject: { [weak object] in
+                object
+            }
+        )
     }
 }

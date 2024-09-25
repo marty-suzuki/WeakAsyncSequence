@@ -1,23 +1,23 @@
-public struct WeakAsyncSequence<Sequence: AsyncSequence, Object>: AsyncSequence {
-    public typealias Element = (Sequence.Element, Object)
+public struct WeakAsyncSequence<Value, Object>: AsyncSequence {
+    public typealias Element = (Value, Object)
 
-    internal let sequence: Sequence
+    internal let createAsyncIterator: () -> () async throws -> Value?
     internal let getObject: () -> Object?
 
     public func makeAsyncIterator() -> Iterator {
         Iterator(
-            iterator: sequence.makeAsyncIterator(),
+            getNext: createAsyncIterator(),
             getObject: getObject
         )
     }
 
     public struct Iterator: AsyncIteratorProtocol {
-        internal var iterator: Sequence.AsyncIterator
+        internal let getNext: () async throws -> Value?
         internal let getObject: () -> Object?
 
         mutating public func next() async throws -> Element? {
             guard
-                let element = try await iterator.next(),
+                let element = try await getNext(),
                 let object = getObject()
             else {
                 return nil
